@@ -198,23 +198,34 @@ void sha256_init(sha256_context *ctx)
 
 
 // -----------------------------------------------------------------------------
-void sha256_hash(sha256_context *ctx, const void *data, size_t len)
-{
+void sha256_hash(sha256_context *ctx, const void *data, size_t len) {
     const uint8_t *bytes = (const uint8_t *)data;
+    // Kiểm tra nếu con trỏ context (ctx) và dữ liệu (bytes) khác NULL,
+     //  Độ dài hiện tại của bộ đệm (ctx->len) phải nhỏ hơn kích thước tối đa của bộ đệm (ctx->buf).
 
     if ((ctx != NULL) && (bytes != NULL) && (ctx->len < sizeof(ctx->buf))) {
+        
+        // Giả định rằng bytes và ctx là các đối tượng động (dùng trong kiểm chứng).
         __CPROVER_assume(__CPROVER_DYNAMIC_OBJECT(bytes));
         __CPROVER_assume(__CPROVER_DYNAMIC_OBJECT(ctx));
-        for (size_t i = 0; i < len; i++) {
-            ctx->buf[ctx->len++] = bytes[i];
-            if (ctx->len == sizeof(ctx->buf)) {
-                _hash(ctx);
-                _addbits(ctx, sizeof(ctx->buf) * 8);
-                ctx->len = 0;
+    
+        for (size_t i = 0; i < len; i++) { // Vòng lặp duyệt qua từng byte của dữ liệu đầu vào.
+            
+            ctx->buf[ctx->len++] = bytes[i]; // Thêm từng byte của dữ liệu vào buffer của context (ctx).
+            
+            if (ctx->len == sizeof(ctx->buf)) { // Nếu buffer của context đã đầy (kích thước đạt đến giới hạn):
+                
+                _hash(ctx);// Thực hiện băm dữ liệu trong buffer.
+                
+                _addbits(ctx, sizeof(ctx->buf) * 8); // Cập nhật số lượng bit đã được thêm vào quá trình băm.
+
+                ctx->len = 0;// Đặt lại độ dài của buffer về 0 để chuẩn bị cho lần xử lý tiếp theo.
+
             }
         }
     }
-} // sha256_hash
+}
+
 
 
 // -----------------------------------------------------------------------------
